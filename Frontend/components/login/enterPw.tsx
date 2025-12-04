@@ -12,7 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { signUpWithEmail, registerUserToBackend } from "../../services/authAPI";
+import { registerUserToBackend } from "../../services/authAPI";
 
 type RootStackParamList = {
   Login: undefined;
@@ -58,8 +58,8 @@ export default function EnterPw() {
 
   const handlePasswordChange = (text: string) => {
     setPassword(text);
-    if (text.length > 0 && text.length < 6) {
-      setPasswordError("비밀번호는 6자 이상이어야 합니다.");
+    if (text.length > 0 && text.length < 8) {
+      setPasswordError("비밀번호는 8자 이상이어야 합니다.");
     } else {
       setPasswordError("");
     }
@@ -87,8 +87,8 @@ export default function EnterPw() {
     let isPasswordValid = false;
     if (!password) {
       setPasswordError("비밀번호를 입력해주세요.");
-    } else if (password.length < 6) {
-      setPasswordError("비밀번호는 6자 이상이어야 합니다.");
+    } else if (password.length < 8) {
+      setPasswordError("비밀번호는 8자 이상이어야 합니다.");
     } else {
       setPasswordError("");
       isPasswordValid = true;
@@ -109,20 +109,8 @@ export default function EnterPw() {
     setIsLoading(true);
 
     try {
-      // 1. Firebase 회원가입 (displayName에 이름과 학번 포함)
-      const displayName = `${name} (${studentId})`;
-      const firebaseResult = await signUpWithEmail(email, password, displayName);
-
-      if (!firebaseResult.success) {
-        Alert.alert("회원가입 실패", firebaseResult.message);
-        setIsLoading(false);
-        return;
-      }
-
-      console.log("Firebase 회원가입 성공:", firebaseResult.user);
-
-      // 2. Backend에 사용자 정보 저장
-      const backendResult = await registerUserToBackend(
+      // Backend API 호출 - Firebase + DB 모두 처리
+      const result = await registerUserToBackend(
         name,
         studentId,
         email,
@@ -130,16 +118,23 @@ export default function EnterPw() {
         "미지정" // department - 추후 입력 가능
       );
 
-      if (!backendResult.success) {
-        // Backend 실패해도 Firebase 회원가입은 성공했으므로 계속 진행
-        // 로그인 시 자동으로 Backend에 동기화됨
-        console.warn("Backend 등록 실패 (Firebase는 성공):", backendResult.message);
-      } else {
-        console.log("Backend 회원가입 성공:", backendResult.data);
+      if (!result.success) {
+        Alert.alert("회원가입 실패", result.message || "회원가입에 실패했습니다.");
+        setIsLoading(false);
+        return;
       }
 
-      // 3. 이메일 인증 화면으로 이동
-      navigation.navigate("EmailVerification", { email });
+      console.log("회원가입 성공:", result.data);
+      Alert.alert(
+        "회원가입 완료",
+        "회원가입이 완료되었습니다. 로그인해주세요.",
+        [
+          {
+            text: "확인",
+            onPress: () => navigation.navigate("Login"),
+          },
+        ]
+      );
     } catch (error) {
       console.error("회원가입 오류:", error);
       Alert.alert("오류", "회원가입 중 오류가 발생했습니다.");
