@@ -20,7 +20,8 @@
       "Bash(python3:*)",
       "Bash(cat:*)",
       "Bash(docker exec:*)",
-      "Bash(npx expo start --web)"
+      "Bash(npx expo start --web)",
+      "Bash(docker ps:*)"
     ],
     "deny": [],
     "ask": []
